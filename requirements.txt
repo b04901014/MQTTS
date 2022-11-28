@@ -1,0 +1,6 @@
+pytorch-lightning==1.5.10
+pyloudnorm==0.1.0
+deep-phonemizer==0.0.17
+https://github.com/pyannote/pyannote-audio/archive/develop.zip
+soundfile==0.10.3.post1
+tqdm==4.62.3
