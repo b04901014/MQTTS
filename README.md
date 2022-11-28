@@ -108,10 +108,10 @@ CUDA_VISIBLE_DEVICES=0 python infer.py \
 
 1. Quantizer (put it under `quantizer/checkpoints/`):
 ```
-wget https://anonfiles.com/Tf52ua4dy8/g_00600000
+wget https://cmu.box.com/s/966rcxkyjps80p7thu0r6lo2udk1ezdm
 ```
 
 2. Transformer (100M version) (put it under `ckpt/`):
 ```
-wget https://anonfiles.com/o6C1u747y6/last_ckpt
+wget https://cmu.box.com/s/xuen9o8wxsmyaz32a65fu25cz92a2jei
 ```
