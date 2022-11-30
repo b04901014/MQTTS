@@ -87,7 +87,10 @@ You can view the progress using:
 tensorboard --logdir logs/
 ```
 
-## Run batched inference (You'll have to change `speaker_to_text.json`, it's just an example.)
+## Run batched inference
+
+You'll have to change `speaker_to_text.json`, it's just an example.
+
 ```
 mkdir infer_samples
 CUDA_VISIBLE_DEVICES=0 python infer.py \
