@@ -106,12 +106,6 @@ CUDA_VISIBLE_DEVICES=0 python infer.py \
 
 ### Pretrained checkpoints
 
-1. Quantizer (put it under `quantizer/checkpoints/`):
-```
-wget https://cmu.box.com/s/966rcxkyjps80p7thu0r6lo2udk1ezdm
-```
+1. Quantizer (put it under `quantizer/checkpoints/`): [here](https://cmu.box.com/s/966rcxkyjps80p7thu0r6lo2udk1ezdm)
 
-2. Transformer (100M version) (put it under `ckpt/`):
-```
-wget https://cmu.box.com/s/xuen9o8wxsmyaz32a65fu25cz92a2jei
-```
+2. Transformer (100M version) (put it under `ckpt/`): [here](https://cmu.box.com/s/xuen9o8wxsmyaz32a65fu25cz92a2jei)
