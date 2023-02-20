@@ -2,6 +2,7 @@
  - Official implementation for the paper: A Vector Quantized Approach for Text to Speech Synthesis on Real-World Spontaneous Speech.
  - Audio samples (40 each system) can be accessed at [here](https://cmu.box.com/s/ktbk9pi04e2z1dlyepkkw69xcu9w91dj).
  - Quick demo can be accessed [here](https://b04901014.github.io/MQTTS/) (Some are still TODO).
+ - Paper appendix is [here](https://cmu.box.com/s/7ghw0bgkbqv5e7hu5jsznhlzuo4rexgx).
 ## Setup the environment
 1. Setup conda environment:
 ```
