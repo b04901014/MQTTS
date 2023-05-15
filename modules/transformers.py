@@ -73,41 +73,17 @@ class MultiheadAttention(nn.Module):
         if past_kv is not None:
             k, v = torch.cat([past_kv, k], 1), torch.cat([past_kv, v], 1)
         k, v = self.k_proj(k), self.v_proj(v)
-        #Reshape for heads (B*nH, T, C)
+        # Reshape for heads (B*nH, T, C)
         q, k, v = self.reshape(q), self.reshape(k), self.reshape(v)
-        attn_weights = torch.bmm(q, k.transpose(1, 2))
-        assert attn_weights.size() == (batch_size * self.nhead, q.size(1), k.size(1))
-        if attn_bias is not None:
-            assert attn_bias.size() == (self.nhead, q.size(1), k.size(1)), f"Should be {(self.nhead, q.size(1), k.size(1))}. Got {attn_bias.size()}"
-            attn_weights = attn_weights + attn_bias.unsqueeze(0).expand(batch_size, -1, -1, -1).reshape(batch_size * self.nhead, q.size(1), k.size(1))
-        if attn_mask is not None:
-            assert attn_mask.size() == (q.size(1), k.size(1)), f"Should be {(q.size(1), k.size(1))}. Got {attn_mask.size()}"
-            assert attn_mask.dtype == torch.bool
-            attn_mask = attn_mask.unsqueeze(0).expand(batch_size * self.nhead, -1, -1)
-        if key_padding_mask is not None:
-            assert key_padding_mask.size() == (batch_size, k.size(1)), f"Should be {(batch_size, k.size(1))}. Got {key_padding_mask.size()}"
-            assert key_padding_mask.dtype == torch.bool
-            key_padding_mask = key_padding_mask.unsqueeze(1).unsqueeze(1).expand(-1, self.nhead, -1, -1)
-            key_padding_mask = key_padding_mask.reshape(batch_size * self.nhead, 1, k.size(1))
-            if attn_mask is None:
-                attn_mask = key_padding_mask.expand(-1, q.size(1), -1)
-            else:
-                attn_mask = attn_mask.logical_or(key_padding_mask)
-        if attn_mask is not None:
-            new_attn_mask = torch.zeros_like(attn_mask, dtype=q.dtype)
-            new_attn_mask.masked_fill_(attn_mask, float("-inf"))
-            attn_mask = new_attn_mask
-            attn_weights = attn_weights + attn_mask
-        attn_weights = F.softmax(attn_weights * self.softmax_temp, dim=-1, dtype=attn_weights.dtype)
-        attn_weights_reshaped = attn_weights.view(batch_size, self.nhead, q.size(1), k.size(1))
-#        attn_weights = attn_weights_reshaped.view(batch_size * self.nhead, q.size(1), k.size(1))
-        attn_probs = self.dropout(attn_weights)
-        attn_output = torch.bmm(attn_probs, v)
-        assert attn_output.size() == (batch_size * self.nhead, q.size(1), self.head_dim)
+
+        # Flash Attention
+        attn_output, attn_probs = F.scaled_dot_product_attention(q, k, v, attn_mask, self.dropout, is_causal=None)
+        
+        attn_probs = attn_probs.view(batch_size, self.nhead, q.size(1), k.size(1))
         attn_output = attn_output.view(batch_size, self.nhead, q.size(1), self.head_dim)
         attn_output = attn_output.transpose(1, 2).reshape(batch_size, q.size(1), self.d_model)
         attn_output = self.out_proj(attn_output)
-        return attn_output, attn_weights_reshaped
+        return attn_output, attn_probs
 
 class CrossAttnOnlyLayer(nn.Module):
     def __init__(self, hp, dropout=0.1):
