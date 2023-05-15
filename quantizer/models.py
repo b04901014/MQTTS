@@ -107,26 +107,33 @@ class Generator(torch.nn.Module):
         )
 
 
-    def forward(self, x, spkr):
-        spkr = self.spkr_linear(spkr)
+    def forward(self, x, states=None):
+        if states is None:
+            states = {}
+        
         x = self.conv_pre(x)
-        spkr = spkr.unsqueeze(-1).expand(-1, -1, x.size(2))
-        x = x + spkr
+        
         for i in range(self.num_upsamples):
             x = F.leaky_relu(x, LRELU_SLOPE)
             x = self.ups[i](x)
             xs = None
             for j in range(self.num_kernels):
                 if xs is None:
-                    xs = self.resblocks[i*self.num_kernels+j](x)
+                    xs = self.resblocks[i*self.num_kernels+j](x, states.get(f'resblock_{i}_{j}', None))
+                    xs = self.normalize[i*self.num_kernels+j](xs)
+                    # Update the states
+                    states[f'resblock_{i}_{j}'] = xs
                 else:
-                    xs += self.resblocks[i*self.num_kernels+j](x)
+                    xs += self.resblocks[i*self.num_kernels+j](x, states.get(f'resblock_{i}_{j}', None))
+                    xs = self.normalize[i*self.num_kernels+j](xs)
+                    # Update the states
+                    states[f'resblock_{i}_{j}'] = xs
             x = xs / self.num_kernels
-        x = F.leaky_relu(x, LRELU_SLOPE)
+        
+        x = F.leaky_relu(x)
         x = self.conv_post(x)
-        x = torch.tanh(x)
-
-        return x
+        
+        return x, states
 
     def remove_weight_norm(self):
         print('Removing weight norm...')
@@ -320,23 +327,33 @@ class Encoder(torch.nn.Module):
         self.ups.apply(init_weights)
         self.conv_post.apply(init_weights)
 
-    def forward(self, x):
+    def forward(self, x, states=None):
+        if states is None:
+            states = {}
+        
         x = self.conv_pre(x)
+        
         for i in range(self.num_upsamples):
             x = F.leaky_relu(x, LRELU_SLOPE)
             x = self.ups[i](x)
             xs = None
             for j in range(self.num_kernels):
                 if xs is None:
-                    xs = self.resblocks[i*self.num_kernels+j](x)
+                    xs = self.resblocks[i*self.num_kernels+j](x, states.get(f'resblock_{i}_{j}', None))
                     xs = self.normalize[i*self.num_kernels+j](xs)
+                    # Update the states
+                    states[f'resblock_{i}_{j}'] = xs
                 else:
-                    xs += self.resblocks[i*self.num_kernels+j](x)
+                    xs += self.resblocks[i*self.num_kernels+j](x, states.get(f'resblock_{i}_{j}', None))
                     xs = self.normalize[i*self.num_kernels+j](xs)
+                    # Update the states
+                    states[f'resblock_{i}_{j}'] = xs
             x = xs / self.num_kernels
+        
         x = F.leaky_relu(x)
         x = self.conv_post(x)
-        return x
+        
+        return x, states
 
     def remove_weight_norm(self):
         print('Removing weight norm...')
