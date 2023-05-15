@@ -19,6 +19,16 @@ class Vocoder(nn.Module):
         if with_encoder:
             self.encoder = Encoder(self.h)
             self.encoder.load_state_dict(ckpt['encoder'])
+    
+    def process_chunk(self, input_waveform, chunk_idx, chunk_size, states):
+        start_idx = chunk_idx * chunk_size
+        end_idx = min((chunk_idx + 1) * chunk_size, input_waveform.shape[-1])
+
+        input_chunk = input_waveform[..., start_idx:end_idx]
+        encoded, states = self.encoder(input_chunk, states)
+        generated, states = self.generator(encoded, states)
+
+        return generated, states
 
     def forward(self, x, spkr, chunk_size=None):
         if chunk_size is not None:
