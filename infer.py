@@ -78,14 +78,14 @@ if __name__ == '__main__':
         i_phones.append(phones)
         if len(i_wavs) == args.batch_size:
             print (f"Inferencing batch {written//args.batch_size+1}, total {len(input_file)//args.batch_size+1} baches.")
-            synthetic = model(i_wavs, i_phones, chunk_size=...)
+            synthetic = model(i_wavs, i_phones, chunk_size=1024)
             for s in synthetic:
                 sf.write(os.path.join(args.outputdir, f'sentence-{written+1}-1.wav'), s, args.sample_rate)
                 written += 1
             i_wavs, i_phones = [], []
     if len(i_wavs) > 0:
-        # Need to replace ... w/ appropriate chunk size. Need to think this through
-        synthetic = model(i_wavs, i_phones, chunk_size=...)
+        # Going w/ 1024 for now.. Need to adjust based off latency/overhead balance
+        synthetic = model(i_wavs, i_phones, chunk_size=1024)
         for s in synthetic:
             sf.write(os.path.join(args.outputdir, f'sentence-{written+1}-1.wav'), s, args.sample_rate)
             written += 1
