@@ -20,8 +20,26 @@ class Vocoder(nn.Module):
             self.encoder = Encoder(self.h)
             self.encoder.load_state_dict(ckpt['encoder'])
 
-    def forward(self, x, spkr):
-        return self.generator(self.quantizer.embed(x), spkr)
+    def forward(self, x, spkr, chunk_size=None):
+        if chunk_size is not None:
+            # Initialize the states dictionary
+            states = {}
+
+            # Initialize an empty list to store the generated output chunks
+            output_chunks = []
+
+            # Calculate the number of chunks in the input waveform
+            num_chunks = (x.shape[-1] + chunk_size - 1) // chunk_size
+
+            # Process each chunk in the input waveform
+            for chunk_idx in range(num_chunks):
+                generated_chunk, states = process_chunk(self.encoder, self.generator, x, chunk_idx, chunk_size, states)
+                output_chunks.append(generated_chunk)
+
+            # Concatenate the generated output chunks to form the complete output
+            return torch.cat(output_chunks, dim=-1)
+        else:
+            return self.generator(self.quantizer.embed(x), spkr)
 
     def encode(self, x):
         batch_size = x.size(0)
